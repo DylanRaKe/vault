@@ -46,3 +46,17 @@
 - Seed: utiliser `tsx` pour exécuter les scripts TypeScript
 - Génération: `npx prisma generate` après modification du schema
 - Migrations: `npx prisma migrate dev` pour créer les migrations
+
+## Raccourcis clavier
+- Détection automatique de la plateforme (Mac/Windows-Linux) via `lib/keyboard.ts`
+- Affichage conditionnel: `⌘` sur Mac, `Ctrl` sur Windows/Linux
+- Hook personnalisé `useKeyboardShortcut` dans `lib/useKeyboardShortcut.ts` pour gérer les raccourcis
+- Raccourcis disponibles:
+  - `Ctrl/Cmd + N`: Créer un nouvel item
+  - `Ctrl/Cmd + K` ou `/`: Focus sur la barre de recherche
+  - `Ctrl/Cmd + E`: Éditer le premier item de la liste filtrée
+  - `Ctrl/Cmd + S`: Sauvegarder (dans le formulaire)
+  - `Ctrl/Cmd + ?`: Ouvrir/fermer le menu d'aide des raccourcis
+  - `Escape`: Fermer les dialogs/formulaires
+- Menu d'aide accessible via `Ctrl/Cmd + ?` affichant tous les raccourcis
+- Les raccourcis ne se déclenchent pas dans les champs de saisie sauf si `allowInInput: true`

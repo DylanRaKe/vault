@@ -1,19 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { VaultLogo } from "@/components/logo/VaultLogo";
-import { setStoredPassword } from "@/lib/storage";
+import { Particles } from "@/components/ui/particles";
+import { getStoredPassword, setStoredPassword } from "@/lib/storage";
 
 export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const storedPassword = getStoredPassword();
+    if (storedPassword) {
+      setPassword(storedPassword);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,8 +55,15 @@ export function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center p-4 bg-[#0a0a0f]">
+      <Particles
+        className="absolute inset-0"
+        quantity={100}
+        ease={50}
+        color="#ffffff"
+        size={0.4}
+      />
+      <Card className="relative z-10 w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto">
             <VaultLogo size={64} />

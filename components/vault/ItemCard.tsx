@@ -26,6 +26,7 @@ import { MagicCard } from "@/components/ui/magic-card";
 import { Edit, Trash2, Eye, AlertCircle, Download, File } from "lucide-react";
 import type { Item } from "@/types/item";
 import { getStoredPassword } from "@/lib/storage";
+import { useKeyboardShortcut } from "@/lib/useKeyboardShortcut";
 
 interface ItemCardProps {
   item: Item;
@@ -73,6 +74,21 @@ export function ItemCard({ item, onEdit, onDelete }: ItemCardProps) {
     const ext = getFileExtension(path);
     return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
   };
+
+  // Raccourci Escape : Fermer les dialogs
+  useKeyboardShortcut({
+    key: "Escape",
+    handler: () => {
+      if (showViewDialog) {
+        setShowViewDialog(false);
+      }
+      if (showDeleteDialog) {
+        setShowDeleteDialog(false);
+      }
+    },
+    ctrlKey: false,
+    allowInInput: true,
+  });
 
   const displayContent =
     item.type === "image" ? (

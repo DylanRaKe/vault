@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ import { FileUpload } from "./FileUpload";
 import { AlertCircle } from "lucide-react";
 import type { Item, ItemType } from "@/types/item";
 import { getStoredPassword } from "@/lib/storage";
+import { useKeyboardShortcut } from "@/lib/useKeyboardShortcut";
 
 interface ItemFormProps {
   open: boolean;
@@ -32,6 +33,7 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
   const [keywords, setKeywords] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (item) {
@@ -46,6 +48,35 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
       setKeywords("");
     }
   }, [item, open]);
+
+  // Raccourci Escape : Fermer le formulaire
+  useKeyboardShortcut({
+    key: "Escape",
+    handler: () => {
+      if (open && !loading) {
+        onOpenChange(false);
+      }
+    },
+    ctrlKey: false,
+    allowInInput: true,
+  });
+
+  // Raccourci Ctrl/Cmd + S : Sauvegarder
+  useKeyboardShortcut({
+    key: "s",
+    handler: (e) => {
+      if (open && !loading && formRef.current) {
+        e.preventDefault();
+        const submitButton = formRef.current.querySelector(
+          'button[type="submit"]'
+        ) as HTMLButtonElement;
+        if (submitButton && !submitButton.disabled) {
+          formRef.current.requestSubmit();
+        }
+      }
+    },
+    allowInInput: true,
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +139,7 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
             <div className="flex gap-2">

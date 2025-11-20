@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { SearchBar } from "@/components/vault/SearchBar";
+import { SearchBar, type SearchBarRef } from "@/components/vault/SearchBar";
 import { ItemCard } from "@/components/vault/ItemCard";
 import { ItemForm } from "@/components/vault/ItemForm";
 import { KeywordTree } from "@/components/vault/KeywordTree";
+import { KeyboardShortcutsMenu } from "@/components/vault/KeyboardShortcutsMenu";
 import { VaultLogo } from "@/components/logo/VaultLogo";
 import { Plus, LogOut } from "lucide-react";
 import type { Item } from "@/types/item";
 import { getStoredPassword, clearStoredPassword } from "@/lib/storage";
+import { useKeyboardShortcut } from "@/lib/useKeyboardShortcut";
 
 export default function VaultPage() {
   const router = useRouter();
@@ -22,6 +24,8 @@ export default function VaultPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shortcutsMenuOpen, setShortcutsMenuOpen] = useState(false);
+  const searchBarRef = useRef<SearchBarRef>(null);
 
   useEffect(() => {
     const password = getStoredPassword();
@@ -106,6 +110,50 @@ export default function VaultPage() {
     router.push("/login");
   };
 
+  // Raccourci Ctrl/Cmd + N : Nouvel item
+  useKeyboardShortcut({
+    key: "n",
+    handler: () => {
+      handleCreate();
+    },
+  });
+
+  // Raccourci Ctrl/Cmd + K : Focus sur la recherche
+  useKeyboardShortcut({
+    key: "k",
+    handler: () => {
+      searchBarRef.current?.focus();
+    },
+  });
+
+  // Raccourci / : Focus sur la recherche
+  useKeyboardShortcut({
+    key: "/",
+    handler: () => {
+      searchBarRef.current?.focus();
+    },
+    ctrlKey: false,
+  });
+
+  // Raccourci Ctrl/Cmd + E : Éditer le premier item
+  useKeyboardShortcut({
+    key: "e",
+    handler: () => {
+      if (filteredItems.length > 0) {
+        handleEdit(filteredItems[0]);
+      }
+    },
+  });
+
+  // Raccourci Ctrl/Cmd + ? : Ouvrir le menu d'aide
+  useKeyboardShortcut({
+    key: "?",
+    handler: () => {
+      setShortcutsMenuOpen((prev) => !prev);
+    },
+    shiftKey: true,
+  });
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -151,6 +199,7 @@ export default function VaultPage() {
           <div className="lg:col-span-3">
             <div className="mb-6">
               <SearchBar
+                ref={searchBarRef}
                 value={searchQuery}
                 onChange={(value) => {
                   setSearchQuery(value);
@@ -190,6 +239,11 @@ export default function VaultPage() {
         onOpenChange={setFormOpen}
         item={editingItem}
         onSuccess={handleFormSuccess}
+      />
+
+      <KeyboardShortcutsMenu
+        open={shortcutsMenuOpen}
+        onOpenChange={setShortcutsMenuOpen}
       />
     </div>
   );
