@@ -13,6 +13,7 @@ interface MagicCardProps {
   gradientOpacity?: number;
   gradientFrom?: string;
   gradientTo?: string;
+  transparent?: boolean;
 }
 
 export function MagicCard({
@@ -23,6 +24,7 @@ export function MagicCard({
   gradientOpacity = 0.8,
   gradientFrom = "#00D9FF",
   gradientTo = "#00D9FF",
+  transparent = false,
 }: MagicCardProps) {
   const mouseX = useMotionValue(-gradientSize);
   const mouseY = useMotionValue(-gradientSize);
@@ -87,7 +89,10 @@ export function MagicCard({
           `,
         }}
       />
-      <div className="bg-background absolute inset-px rounded-[inherit]" />
+      <div className={cn(
+        "absolute inset-px rounded-[inherit]",
+        transparent ? "bg-background/30" : "bg-background"
+      )} />
       <motion.div
         className="pointer-events-none absolute inset-px rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
         style={{

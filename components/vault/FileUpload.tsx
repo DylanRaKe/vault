@@ -15,6 +15,7 @@ interface FileUploadProps {
   accept?: string;
   label?: string;
   type: "image" | "document";
+  isDragging?: boolean;
 }
 
 export function FileUpload({ 
@@ -22,7 +23,8 @@ export function FileUpload({
   onChange, 
   accept,
   label,
-  type 
+  type,
+  isDragging = false
 }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,11 +86,14 @@ export function FileUpload({
       {value ? (
         <div className="relative">
           {type === "image" || isImage(value) ? (
-            <img
-              src={value}
-              alt="Uploaded"
-              className="h-48 w-full rounded-md object-cover"
-            />
+            <div className="relative h-48 w-full">
+              <Image
+                src={value}
+                alt="Uploaded"
+                fill
+                className="rounded-md object-cover"
+              />
+            </div>
           ) : (
             <div className="flex items-center justify-center h-48 w-full rounded-md border border-border bg-muted/50">
               <div className="text-center">
@@ -113,7 +118,25 @@ export function FileUpload({
           </Button>
         </div>
       ) : (
-        <div>
+        <div
+          className={`
+            relative border-2 border-dashed rounded-lg p-8 transition-all
+            ${isDragging 
+              ? "border-primary bg-primary/10" 
+              : "border-border hover:border-primary/50 hover:bg-accent/5"
+            }
+            ${uploading ? "opacity-50 cursor-wait" : "cursor-pointer"}
+          `}
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
           <Input
             ref={fileInputRef}
             type="file"
@@ -122,16 +145,30 @@ export function FileUpload({
             disabled={uploading}
             className="hidden"
           />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="w-full"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            {uploading ? "Uploading..." : `Upload ${type === "image" ? "Image" : "Document"}`}
-          </Button>
+          <div className="flex flex-col items-center justify-center gap-4 text-center">
+            <div className={`
+              p-4 rounded-full transition-colors
+              ${isDragging ? "bg-primary/20" : "bg-muted/50"}
+            `}>
+              <Upload className={`h-8 w-8 ${isDragging ? "text-primary" : "text-muted-foreground"}`} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">
+                {isDragging 
+                  ? "Drop your file here" 
+                  : uploading 
+                    ? "Uploading..." 
+                    : `Click or drag to upload ${type === "image" ? "image" : "document"}`
+                }
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {type === "image" 
+                  ? "PNG, JPG, GIF up to 10MB" 
+                  : "Any file type up to 10MB"
+                }
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

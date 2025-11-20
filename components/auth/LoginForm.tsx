@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { VaultLogo } from "@/components/logo/VaultLogo";
-import { Particles } from "@/components/ui/particles";
+import { Ripple } from "@/components/ui/ripple";
 import { getStoredPassword, setStoredPassword } from "@/lib/storage";
 
 export function LoginForm() {
@@ -47,7 +46,7 @@ export function LoginForm() {
       
       // Redirect to vault
       router.push("/vault");
-    } catch (err) {
+    } catch {
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -56,24 +55,18 @@ export function LoginForm() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4 bg-[#0a0a0f]">
-      <Particles
-        className="absolute inset-0"
-        quantity={100}
-        ease={50}
-        color="#ffffff"
-        size={0.4}
-      />
-      <Card className="relative z-10 w-full max-w-md">
-        <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto">
-            <VaultLogo size={64} />
+      <Ripple className="absolute inset-0" />
+      <div className="relative z-10 w-full max-w-md">
+        <div className="backdrop-blur-xl bg-card/40 border border-border/50 rounded-lg shadow-2xl p-8 space-y-6">
+          <div className="space-y-4 text-center">
+            <div className="mx-auto">
+              <VaultLogo size={64} />
+            </div>
+            <h1 className="text-3xl font-bold">Vault</h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your master password to access your vault
+            </p>
           </div>
-          <CardTitle className="text-3xl font-bold">Vault</CardTitle>
-          <CardDescription>
-            Enter your master password to access your vault
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">Master Password</Label>
@@ -85,7 +78,7 @@ export function LoginForm() {
                 placeholder="Enter your password"
                 required
                 autoFocus
-                className="w-full"
+                className="w-full bg-background/50 backdrop-blur-sm border-border/50"
               />
             </div>
             {error && (
@@ -99,8 +92,8 @@ export function LoginForm() {
               {loading ? "Verifying..." : "Unlock Vault"}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -23,6 +23,15 @@ export async function GET(request: NextRequest) {
     const items = query ? await searchItems(query) : await getAllItems();
     return NextResponse.json(items);
   } catch (error) {
+    // Si la table n'existe pas encore, retourner un tableau vide
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2021"
+    ) {
+      return NextResponse.json([]);
+    }
     console.error("Error fetching items:", error);
     return NextResponse.json(
       { error: "Internal server error" },

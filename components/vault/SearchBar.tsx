@@ -34,7 +34,7 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="pl-10 pr-10"
+          className="pl-10 pr-10 bg-background/50 backdrop-blur-sm border-border/50"
         />
         {value && (
           <Button

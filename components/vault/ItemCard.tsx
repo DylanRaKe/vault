@@ -70,11 +70,6 @@ export function ItemCard({ item, onEdit, onDelete }: ItemCardProps) {
     return path.split('.').pop()?.toLowerCase() || '';
   };
 
-  const isImage = (path: string) => {
-    const ext = getFileExtension(path);
-    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
-  };
-
   // Raccourci Escape : Fermer les dialogs
   useKeyboardShortcut({
     key: "Escape",
@@ -127,11 +122,12 @@ export function ItemCard({ item, onEdit, onDelete }: ItemCardProps) {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <Card className="group relative overflow-hidden border-2 border-border/60 transition-all duration-300 hover:border-primary/80 hover:shadow-lg hover:shadow-primary/10">
+      <Card className="group relative overflow-hidden border-2 border-border/30 bg-card/20 backdrop-blur-xl transition-all duration-300 hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10">
         <MagicCard
           gradientFrom="#00D9FF"
           gradientTo="#00D9FF"
           className="h-full"
+          transparent={true}
         >
           <CardContent className="p-4">
             <div className="space-y-3">

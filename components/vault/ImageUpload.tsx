@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,11 +65,14 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       )}
       {value ? (
         <div className="relative">
-          <img
-            src={value}
-            alt="Uploaded"
-            className="h-48 w-full rounded-md object-cover"
-          />
+          <div className="relative h-48 w-full">
+            <Image
+              src={value}
+              alt="Uploaded"
+              fill
+              className="rounded-md object-cover"
+            />
+          </div>
           <Button
             type="button"
             variant="destructive"

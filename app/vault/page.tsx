@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,10 +9,10 @@ import { ItemCard } from "@/components/vault/ItemCard";
 import { ItemForm } from "@/components/vault/ItemForm";
 import { KeywordTree } from "@/components/vault/KeywordTree";
 import { KeyboardShortcutsMenu } from "@/components/vault/KeyboardShortcutsMenu";
-import { VaultLogo } from "@/components/logo/VaultLogo";
-import { Plus, LogOut } from "lucide-react";
+import { FlickeringGrid } from "@/components/ui/flickering-grid";
+import { Plus } from "lucide-react";
 import type { Item } from "@/types/item";
-import { getStoredPassword, clearStoredPassword } from "@/lib/storage";
+import { getStoredPassword } from "@/lib/storage";
 import { useKeyboardShortcut } from "@/lib/useKeyboardShortcut";
 
 export default function VaultPage() {
@@ -27,6 +27,32 @@ export default function VaultPage() {
   const [shortcutsMenuOpen, setShortcutsMenuOpen] = useState(false);
   const searchBarRef = useRef<SearchBarRef>(null);
 
+  const fetchItems = useCallback(async () => {
+    try {
+      const password = getStoredPassword();
+      const response = await fetch("/api/items", {
+        headers: {
+          authorization: password || "",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push("/login");
+          return;
+        }
+        throw new Error("Failed to fetch items");
+      }
+
+      const data = await response.json();
+      setItems(data);
+    } catch (error) {
+      console.error("Error fetching items:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
   useEffect(() => {
     const password = getStoredPassword();
     if (!password) {
@@ -35,7 +61,7 @@ export default function VaultPage() {
     }
 
     fetchItems();
-  }, [router]);
+  }, [router, fetchItems]);
 
   useEffect(() => {
     let filtered = items;
@@ -61,32 +87,6 @@ export default function VaultPage() {
     setFilteredItems(filtered);
   }, [items, searchQuery, selectedKeyword]);
 
-  const fetchItems = async () => {
-    try {
-      const password = getStoredPassword();
-      const response = await fetch("/api/items", {
-        headers: {
-          authorization: password || "",
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          router.push("/login");
-          return;
-        }
-        throw new Error("Failed to fetch items");
-      }
-
-      const data = await response.json();
-      setItems(data);
-    } catch (error) {
-      console.error("Error fetching items:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreate = () => {
     setEditingItem(null);
     setFormOpen(true);
@@ -105,10 +105,6 @@ export default function VaultPage() {
     fetchItems();
   };
 
-  const handleLogout = () => {
-    clearStoredPassword();
-    router.push("/login");
-  };
 
   // Raccourci Ctrl/Cmd + N : Nouvel item
   useKeyboardShortcut({
@@ -156,37 +152,21 @@ export default function VaultPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+      <div className="relative flex min-h-screen items-center justify-center bg-[#0a0a0f]">
+        <FlickeringGrid className="absolute inset-0" color="rgb(255, 255, 255)" />
+        <div className="relative z-10 text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <VaultLogo size={32} />
-            <h1 className="text-2xl font-bold">Vault</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={handleCreate}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Item
-            </Button>
-            <Button variant="ghost" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6">
+    <div className="relative min-h-screen bg-[#0a0a0f]">
+      <FlickeringGrid className="absolute inset-0" color="rgb(255, 255, 255)" />
+      
+      <div className="relative z-10 container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
           <div className="lg:col-span-1">
-            <Card className="p-4">
+            <Card className="p-4 bg-card/20 backdrop-blur-xl border-border/30">
               <h2 className="mb-4 font-semibold">Keywords</h2>
               <KeywordTree
                 items={items}
@@ -211,7 +191,7 @@ export default function VaultPage() {
             </div>
 
             {filteredItems.length === 0 ? (
-              <Card className="p-12 text-center">
+              <Card className="p-12 text-center bg-card/20 backdrop-blur-xl border-border/30">
                 <p className="text-muted-foreground">
                   {searchQuery || selectedKeyword
                     ? "No items found matching your criteria"
@@ -234,17 +214,29 @@ export default function VaultPage() {
         </div>
       </div>
 
-      <ItemForm
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        item={editingItem}
-        onSuccess={handleFormSuccess}
-      />
+      <div className="relative z-10">
+        <ItemForm
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          item={editingItem}
+          onSuccess={handleFormSuccess}
+        />
 
-      <KeyboardShortcutsMenu
-        open={shortcutsMenuOpen}
-        onOpenChange={setShortcutsMenuOpen}
-      />
+        <KeyboardShortcutsMenu
+          open={shortcutsMenuOpen}
+          onOpenChange={setShortcutsMenuOpen}
+        />
+      </div>
+
+      {/* Floating Action Button */}
+      <Button
+        onClick={handleCreate}
+        size="icon"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50"
+        aria-label="Create new item"
+      >
+        <Plus className="h-5 w-5" />
+      </Button>
     </div>
   );
 }

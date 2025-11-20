@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: 0 0% 0%;
+  --background: 0 0% 4%;
   --foreground: 0 0% 93%;
   --card: 0 0% 3%;
   --card-foreground: 0 0% 93%;
@@ -70,4 +70,19 @@ body {
 
 .animate-shine {
   animation: shine var(--duration) linear infinite;
+}
+
+@keyframes ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: ripple 3s ease-out infinite;
 }

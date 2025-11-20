@@ -56,7 +56,7 @@ export function KeyboardShortcutsMenu({
         <DialogHeader>
           <DialogTitle>Raccourcis clavier</DialogTitle>
           <DialogDescription>
-            Liste de tous les raccourcis clavier disponibles dans l'application
+            Liste de tous les raccourcis clavier disponibles dans l&apos;application
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4 space-y-3">
