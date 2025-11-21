@@ -41,6 +41,13 @@ npm run dev
 - `npm run lint` : vérifie la qualité du code (ESLint).
 - `npm run seed` : exécute le seed Prisma en TypeScript via `tsx`.
 
+## Déploiement
+- Si votre pipeline déploie un tarball, évitez d'inclure les fichiers qui bougent pendant la collecte (`node_modules`, `.git`, etc.). Exemple :
+  ```bash
+  tar --exclude="./node_modules" --exclude=".git" -czf deploy.tar.gz .
+  ```
+- Si vous devez absolument zipper tout le repo, arrêtez d'abord tout watcher/build (`npm run dev`, `next dev`, etc.) pendant l'archivage pour ne pas avoir `tar: .: file changed as we read it`.
+
 ## Raccourcis clavier supportés
 - `Ctrl/Cmd + N` : créer un nouvel item.
 - `Ctrl/Cmd + K` ou `/` : focus sur la barre de recherche.
