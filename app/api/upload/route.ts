@@ -14,24 +14,33 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData();
-    const file = formData.get("file") as File;
+    const files = formData.getAll("file") as File[];
 
-    if (!file) {
+    if (files.length === 0) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const uploadResults = await Promise.all(
+      files.map(async (file) => {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
 
-    const filename = `${Date.now()}-${file.name}`;
-    const path = join(process.cwd(), "public", "uploads", filename);
+        const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.name}`;
+        const path = join(process.cwd(), "public", "uploads", filename);
 
-    await writeFile(path, buffer);
+        await writeFile(path, buffer);
+
+        return {
+          filename,
+          path: `/uploads/${filename}`,
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
-      filename,
-      path: `/uploads/${filename}`,
+      files: uploadResults,
+      paths: uploadResults.map((r) => r.path),
     });
   } catch (error) {
     console.error("Error uploading file:", error);

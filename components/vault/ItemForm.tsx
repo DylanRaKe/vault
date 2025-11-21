@@ -14,8 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FileUpload } from "./FileUpload";
-import { AlertCircle, FileText, Image as ImageIcon, File, Plus } from "lucide-react";
-import type { Item, ItemType } from "@/types/item";
+import { AlertCircle, FileText, Plus, Merge, Download } from "lucide-react";
+import type { Item } from "@/types/item";
 import { getStoredPassword } from "@/lib/storage";
 import { useKeyboardShortcut } from "@/lib/useKeyboardShortcut";
 
@@ -29,9 +29,11 @@ interface ItemFormProps {
 export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [type, setType] = useState<ItemType>("text");
+  const [files, setFiles] = useState<string[]>([]);
+  const [mergedPdfPath, setMergedPdfPath] = useState<string | null>(null);
   const [keywords, setKeywords] = useState("");
   const [loading, setLoading] = useState(false);
+  const [merging, setMerging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -41,12 +43,16 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
     if (item) {
       setTitle(item.title || "");
       setContent(item.content || "");
-      setType(item.type);
+      setFiles(item.files || []);
       setKeywords(item.keywords.join(", "));
+      // Vérifier si un PDF fusionné existe dans les fichiers
+      const mergedPdf = (item.files || []).find(f => f.includes('merged-') && f.endsWith('.pdf'));
+      setMergedPdfPath(mergedPdf || null);
     } else {
       setTitle("");
       setContent("");
-      setType("text");
+      setFiles([]);
+      setMergedPdfPath(null);
       setKeywords("");
     }
   }, [item, open]);
@@ -98,23 +104,14 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
       e.stopPropagation();
       setIsDragging(false);
 
-      const files = Array.from(e.dataTransfer.files);
-      if (files.length === 0) return;
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      if (droppedFiles.length === 0) return;
 
-      const file = files[0];
-      const isImageFile = file.type.startsWith("image/");
-      const isDocumentFile = !isImageFile && file.type !== "";
-
-      // Déterminer le type automatiquement
-      if (isImageFile) {
-        setType("image");
-      } else if (isDocumentFile) {
-        setType("document");
-      }
-
-      // Uploader le fichier
+      // Uploader tous les fichiers
       const formData = new FormData();
-      formData.append("file", file);
+      droppedFiles.forEach((file) => {
+        formData.append("file", file);
+      });
 
       setLoading(true);
       try {
@@ -132,7 +129,7 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
         }
 
         const data = await response.json();
-        setContent(data.path);
+        setFiles((prev) => [...prev, ...data.paths]);
         setError(null);
       } catch (error) {
         console.error("Upload error:", error);
@@ -143,6 +140,51 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
     },
     []
   );
+
+  const getAllFiles = (): string[] => {
+    return files;
+  };
+
+  const isPdfOrImage = (path: string): boolean => {
+    const ext = path.split('.').pop()?.toLowerCase() || '';
+    return ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+  };
+
+  const canMerge = (): boolean => {
+    const allFiles = getAllFiles();
+    if (allFiles.length < 2) return false;
+    return allFiles.every(isPdfOrImage);
+  };
+
+  const handleMerge = async () => {
+    if (!item || !canMerge()) return;
+
+    setMerging(true);
+    try {
+      const password = getStoredPassword();
+      const response = await fetch(`/api/items/${item.id}/merge`, {
+        method: "POST",
+        headers: {
+          authorization: password || "",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to merge files");
+      }
+
+      const data = await response.json();
+      setMergedPdfPath(data.path);
+      setFiles((prev) => [...prev, data.path]);
+      setError(null);
+      onSuccess(); // Rafraîchir la liste
+    } catch (error) {
+      console.error("Error merging files:", error);
+      setError("Failed to merge files");
+    } finally {
+      setMerging(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,7 +209,8 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
         body: JSON.stringify({
           title: title || undefined,
           content: content || undefined,
-          type,
+          files: files.length > 0 ? files : undefined,
+          type: "text",
           keywords: keywordsArray,
         }),
       });
@@ -189,8 +232,8 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             {item ? (
               <>
@@ -210,47 +253,15 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
               : "Add a new item to your vault"}
           </DialogDescription>
         </DialogHeader>
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-3">
-            <Label htmlFor="type">Item Type</Label>
-            <div className="grid grid-cols-3 gap-3">
-              <Button
-                type="button"
-                variant={type === "text" ? "default" : "outline"}
-                onClick={() => setType("text")}
-                className="h-auto py-4 flex flex-col items-center gap-2"
-              >
-                <FileText className="h-5 w-5" />
-                <span>Text</span>
-              </Button>
-              <Button
-                type="button"
-                variant={type === "image" ? "default" : "outline"}
-                onClick={() => setType("image")}
-                className="h-auto py-4 flex flex-col items-center gap-2"
-              >
-                <ImageIcon className="h-5 w-5" />
-                <span>Image</span>
-              </Button>
-              <Button
-                type="button"
-                variant={type === "document" ? "default" : "outline"}
-                onClick={() => setType("document")}
-                className="h-auto py-4 flex flex-col items-center gap-2"
-              >
-                <File className="h-5 w-5" />
-                <span>Document</span>
-              </Button>
-            </div>
-          </div>
-
+        <div className="flex-1 overflow-y-auto px-6">
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="title">Title (optional)</Label>
             <Input
@@ -262,50 +273,66 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
             />
           </div>
 
-          {type === "text" ? (
-            <div className="space-y-2">
-              <Label htmlFor="content" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Content
-              </Label>
-              <textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Enter your text content..."
-                className="flex min-h-[120px] w-full rounded-md border border-input bg-background/50 backdrop-blur-sm px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                required
-              />
-            </div>
-          ) : (
-            <div
-              ref={dropZoneRef}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`space-y-2 transition-all ${
-                isDragging ? "opacity-50" : ""
-              }`}
-            >
-              {type === "image" ? (
-                <FileUpload
-                  type="image"
-                  value={content}
-                  onChange={(path) => setContent(path)}
-                  accept="image/*"
-                  isDragging={isDragging}
-                />
-              ) : (
-                <FileUpload
-                  type="document"
-                  value={content}
-                  onChange={(path) => setContent(path)}
-                  accept="*/*"
-                  isDragging={isDragging}
-                />
-              )}
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="content" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Content (optional)
+            </Label>
+            <textarea
+              id="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Enter your text content..."
+              className="flex min-h-[120px] w-full rounded-md border border-input bg-background/50 backdrop-blur-sm px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+
+          <div
+            ref={dropZoneRef}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`space-y-2 transition-all ${
+              isDragging ? "opacity-50" : ""
+            }`}
+          >
+            <FileUpload
+              type="document"
+              value={files}
+              onChange={(paths) => setFiles(Array.isArray(paths) ? paths : [])}
+              accept="*/*"
+              isDragging={isDragging}
+              multiple={true}
+              label="Files (optional)"
+            />
+            {item && canMerge() && (
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleMerge}
+                  disabled={merging}
+                  className="flex items-center gap-2"
+                >
+                  <Merge className="h-4 w-4" />
+                  {merging ? "Fusion en cours..." : "Fusionner"}
+                </Button>
+                {mergedPdfPath && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    asChild
+                    className="flex items-center gap-2"
+                  >
+                    <a href={mergedPdfPath} download>
+                      <Download className="h-4 w-4" />
+                      Télécharger la fusion
+                    </a>
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="keywords">
@@ -323,7 +350,7 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
             </p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="px-6 pb-6 pt-4 flex-shrink-0 border-t mt-6">
             <Button
               type="button"
               variant="outline"
@@ -336,6 +363,7 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
             </Button>
           </DialogFooter>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

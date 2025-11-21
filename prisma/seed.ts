@@ -1,9 +1,13 @@
 import { PrismaClient } from "../generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 import "dotenv/config";
 
-const dbPath = process.env.DATABASE_URL?.replace("file:", "") || "./dev.db";
-const adapter = new PrismaBetterSqlite3({ url: dbPath });
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL must be set to connect to PostgreSQL.");
+}
+
+const adapter = new PrismaPg({ connectionString });
 
 const prisma = new PrismaClient({
   adapter,

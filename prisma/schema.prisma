@@ -7,13 +7,14 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Item {
   id        String   @id @default(cuid())
   title     String?
   content   String?
+  files     String?  // JSON array stringifié pour SQLite (chemins des fichiers supplémentaires)
   type      String   // "text" | "image"
   keywords  String   // JSON array stringifié pour SQLite
   createdAt DateTime @default(now())

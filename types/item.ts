@@ -4,6 +4,7 @@ export interface Item {
   id: string;
   title: string | null;
   content: string | null;
+  files?: string[];
   type: ItemType;
   keywords: string[];
   createdAt: Date;
@@ -13,6 +14,7 @@ export interface Item {
 export interface CreateItemInput {
   title?: string;
   content?: string;
+  files?: string[];
   type: ItemType;
   keywords: string[];
 }
@@ -20,6 +22,7 @@ export interface CreateItemInput {
 export interface UpdateItemInput {
   title?: string;
   content?: string;
+  files?: string[];
   keywords?: string[];
 }
 
