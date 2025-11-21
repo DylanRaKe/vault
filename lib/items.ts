@@ -17,15 +17,12 @@ export async function getAllItems(): Promise<Item[]> {
       orderBy: { updatedAt: "desc" },
     });
 
-    return items.map((item) => {
-      const itemWithFiles = item as Prisma.ItemGetPayload<{}>;
-      return {
-        ...item,
-        type: item.type as ItemType,
-        keywords: JSON.parse(item.keywords || "[]") as string[],
-        files: itemWithFiles.files ? (JSON.parse(itemWithFiles.files) as string[]) : undefined,
-      };
-    });
+    return items.map((item) => ({
+      ...item,
+      type: item.type as ItemType,
+      keywords: JSON.parse(item.keywords || "[]") as string[],
+      files: item.files ? (JSON.parse(item.files) as string[]) : undefined,
+    }));
   } catch (error) {
     // Si la table n'existe pas encore, retourner un tableau vide
     if (isTableNotFoundError(error)) {
@@ -43,12 +40,11 @@ export async function getItemById(id: string): Promise<Item | null> {
 
     if (!item) return null;
 
-    const itemWithFiles = item as Prisma.ItemGetPayload<{}>;
     return {
       ...item,
       type: item.type as ItemType,
       keywords: JSON.parse(item.keywords || "[]") as string[],
-      files: itemWithFiles.files ? (JSON.parse(itemWithFiles.files) as string[]) : undefined,
+      files: item.files ? (JSON.parse(item.files) as string[]) : undefined,
     };
   } catch (error) {
     // Si la table n'existe pas encore, retourner null
@@ -85,12 +81,11 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
     } as Prisma.ItemUncheckedCreateInput,
   });
 
-  const itemWithFiles = item as Prisma.ItemGetPayload<{}>;
   return {
     ...item,
     type: item.type as ItemType,
     keywords: JSON.parse(item.keywords || "[]") as string[],
-    files: itemWithFiles.files ? (JSON.parse(itemWithFiles.files) as string[]) : undefined,
+    files: item.files ? (JSON.parse(item.files) as string[]) : undefined,
   };
 }
 
@@ -116,12 +111,11 @@ export async function updateItem(
     data: updateData as Prisma.ItemUncheckedUpdateInput,
   });
 
-  const itemWithFiles = item as Prisma.ItemGetPayload<{}>;
   return {
     ...item,
     type: item.type as ItemType,
     keywords: JSON.parse(item.keywords || "[]") as string[],
-    files: itemWithFiles.files ? (JSON.parse(itemWithFiles.files) as string[]) : undefined,
+    files: item.files ? (JSON.parse(item.files) as string[]) : undefined,
   };
 }
 
