@@ -42,11 +42,17 @@ npm run dev
 - `npm run seed` : exécute le seed Prisma en TypeScript via `tsx`.
 
 ## Déploiement
-- Si votre pipeline déploie un tarball, évitez d'inclure les fichiers qui bougent pendant la collecte (`node_modules`, `.git`, etc.). Exemple :
+- Le workflow GitHub Actions se contente d’exécuter `git pull origin main` sur le VPS, puis d’appliquer les migrations et de rebuild l’app en place pour éviter le tarball :
   ```bash
-  tar --exclude="./node_modules" --exclude=".git" -czf deploy.tar.gz .
+  cd /home/ubuntu/vault
+  git pull origin main
+  npm ci --production
+  npx prisma generate
+  npx prisma migrate deploy
+  npm run build
+  pm2 restart vault
+  pm2 save
   ```
-- Si vous devez absolument zipper tout le repo, arrêtez d'abord tout watcher/build (`npm run dev`, `next dev`, etc.) pendant l'archivage pour ne pas avoir `tar: .: file changed as we read it`.
 
 ## Raccourcis clavier supportés
 - `Ctrl/Cmd + N` : créer un nouvel item.
